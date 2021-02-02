@@ -142,43 +142,46 @@ Design constraints are constraints on the structure of the network itself.  Thes
 A fledgling list of metrics used to analyze the LED network 
 	
   - Frame throughput rate (frames/sec)
-	- Maximum frame size 
-	- Latency between nodes 
-	- MQTT publish rate
-	- Latency between controller and node
-	- Network throughput between controller and node
+  - Maximum frame size 
+  - Latency between nodes  
+  - MQTT publish rate
+  - Latency between controller and node
+  - Network throughput between controller and node
 
 
 # Operationalization Guidelines
 	
   - Do not make users think, unless they want to.  The user should have to do nothing more than stumble upon an installation. 
-	- Make hardware "invisible".  To a participant it should look like magic. 
-	- Define project component boundaries early and often.  Separability is key to being able to scale.   	
+  - Make hardware "invisible".  To a participant it should look like magic. 
+  - Define project component boundaries early and often.  Separability is key to being able to scale.   	
   - Abstractions must solve a real problem today, not an imaginary problem tomorrow. 
-	- Harden existing implementations first before running off and building new things.		
-	- Architecture should dictate the choice of technologies, not the other way around. 
+  - Harden existing implementations first before running off and building new things.		
+  - Architecture should dictate the choice of technologies, not the other way around. 
 
 # Questions For Further Research
   
   1. Is separation between receiver and translator necessary?
-	2. How does a translator know about the details of a topology?	
-	3. How will the network be described logically? 
-	4. What latency does horizontal scaling introduce as more and more nodes/controllers are attached to the system?
-	5. Is MQTT even the right solution? Would raw UDP communication be better?  What about a different layer, such as Websockets?
+  2. How does a translator know about the details of a topology?	
+  3. How will the network be described logically? 
+  4. What latency does horizontal scaling introduce as more and more nodes/controllers are attached to the system?
+  5. Is MQTT even the right solution? Would raw UDP communication be better?  What about a different layer, such as Websockets?
   
 # Iteration Roadmap (Tentative)
 
 The first stages of the roadmap might look as follows
 
-	Iteration 1: 	Simple network
+Iteration 1: 	Simple network
+    
     - 2 nodes, 1 controller
-	  - Basic end to end communication with MQTT
+    - Basic end to end communication with MQTT
   
-	Iteration 2:	Initial spec of frames/topologies  
-	  - 2 nodes, 1 controller 
+Iteration 2:	Initial spec of frames/topologies  
+
+    - 2 nodes, 1 controller 
     - Intermediate support for inter-node communication 
     
-	Iteration 3: 	Complex network
+Iteration 3: 	Complex network
+    
     - 2 topologies (each with 2 nodes), 1 controller
     - Intermediate support for inter-node communication 
     - Multiple topics supported by the broker
