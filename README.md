@@ -15,10 +15,27 @@ With the LED network, designers are able to build out large scale interactive LE
 
 # Design Goals.
 
+There are four design goals that shape this endeavor, roughly in this order:
+
+- Physical world capture : The LED network will capture data from the physical world, and cause it to perform some meaningful operation on an LED display.  The input source
+	can be a camera, a sensor, a gesture, or some other device that takes input from the physical world and translates it into a signal.
+		
+- Horizontal scaling: Rather than being concerned over how many LEDs an individual system can drive, focus is shifted to horizontal scaling of LEDs.  This reduces issues that typically arise with larger volume LED systems (voltage drop, syncing, data loss)
+
+- Near real time response: The LED network will capture data, operate on it, and send it to the LED display with minimal latency.   		
+		
+- Ease of implementation: Adding individual commodity components to the network should require little effort.  Data capture should be simple to retrieve.  Programming the rules for responding to interactive input should be straightforward with minimal programming know-how.
 
 
 # Component Definitions
 
+Everything on the LED network does one of there things: capture input, process input, or receive/display a representation of that input.  Components on the network are decoupled as much as possible along the lines of these responsibilities. 
+
+ - Installation:
+	
+		- An installation is the entire system taken as a whole. 
+		- Users interact directly with the installation. 		
+		- The installation can be represented as a directed acyclic graph (DAG) of defined components
 
 
 # Design Constraints
