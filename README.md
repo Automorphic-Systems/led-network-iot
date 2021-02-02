@@ -46,35 +46,35 @@ Everything on the LED network does one of there things: capture input, process i
 		- Nodes can both publish and subscribe to the controller
 		- The network can support as many nodes as the IP space will allow 
 		
-	- Controller:
+ - Controller:
 	
 		- A controller is a unit of hardware that is responsible for orchestrating commands and directing them to different nodes		
 		- Controllers must support and run an MQTT broker	
-	  - Controllers must be able to accept commands and requests from nodes and direct them to other nodes
+	        - Controllers must be able to accept commands and requests from nodes and direct them to other nodes
 		- The LED network allows for one logical controller, but that controller can utilize multiple devices to support broker clustering
 		- Controllers must be able to capture telemetry input from nodes		
 		- Controllers must be able to capture aggregated source data from receivers 		
 		
-	Constellation:
+- Constellation:
 	
-		- A constellation is a logical aggregation of multiple topologies.  Taken as a whole they represent the entire LED system to be driven and displayed. 		
+		- A constellation is a logical aggregation of multiple topologies.  Taken as a whole they represent the entire LED system to be driven and displayed. 
 		- Exactly one constellation exists on the network and is the destination for messages coming from exactly one controller.  				
 	
-	Topology:
+ - Topology:
 	
 		- Topologies are a physical organization of LEDs supported by the node, such as a matrix, strip, circle, or some other geometric arrangement.
 		- One node drives exactly one topology.  		
 		- Topologies may reflect two or three dimensional organization of LEDs.   		
 		- Topologies are hardware agnostic to the extent that LEDs can be supported by the components driving them.  
 		
-	Frame:
+ - Frame:
 	
 		- Frames are a stateful representation of the LEDs described in a topology	
 		- Frames at minimum indicate the color of each LED (i.e. the LED's state)
 		- There is no upper bound on the number of LEDs in a frame; limitations here would be imposed by the hardware itself (ws-spec, voltage, memory, utilization, length of wire)		
 		- A frame describes the state of LEDs in exactly one topology
 							
-	Recipe:
+- Recipe:
 	
 		- Recipes are set of instructions that can be executed over the frame. 
 		- Recipes accept a frame as input and return a frame as output. 
@@ -83,13 +83,13 @@ Everything on the LED network does one of there things: capture input, process i
 		- Recipes can include simple mapping effects, neural networks, iterative systems, complex events, generative functions, etc. 		
 		- There are no logical limits to how many recipes can be applied by the topology to the frame 
 
-	Sources:
+- Sources:
 	
 		- Sources are any input that produces a data signal in real time.		
 		- Sources can be physical sensors, gestures, camera capture, etc. 		
 		- Sources are not connected to the network directly. Data from sources is relayed by way of receivers.		
 	
-	Receivers:
+- Receivers:
 	
 		- Receivers is any logical or hardware device that takes input from a source and passes it on to the controller		
 		- Receivers may receive data streams from multiple, heterogeneous sources. 		
@@ -97,7 +97,7 @@ Everything on the LED network does one of there things: capture input, process i
 		- The network can support multiple receivers, all of which publish to the controller 		
 		- Receivers may publish data streams to a translator
 		
-	Translators:
+- Translators:
 	
 		- A translator is a logical component that accepts input from the receiver and converts it to output to be published by the controller.
 		- A translator requires three things:  the data from the receiver, the topology on which it intends to operate, a recipe which determines how the 
