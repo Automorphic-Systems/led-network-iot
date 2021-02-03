@@ -29,7 +29,7 @@ There are four design goals that shape this endeavor, roughly in this order:
 
 # Component Definitions
 
-Everything on the LED network does one of there things: capture input, process input, or receive/display a representation of that input.  Components on the network are decoupled as much as possible along the lines of these responsibilities. 
+Everything on the LED network does one of there things: capture input, process input, or render a representation of that input.  Components on the network are decoupled as much as possible along the lines of these responsibilities. 
 
  - Installation:
 	
@@ -53,7 +53,7 @@ Everything on the LED network does one of there things: capture input, process i
 	        - Controllers must be able to accept commands and requests from nodes and direct them to other nodes
 		- The LED network allows for one logical controller, but that controller can utilize multiple devices to support broker clustering
 		- Controllers must be able to capture telemetry input from nodes		
-		- Controllers must be able to capture aggregated source data from receivers 		
+		- Controllers must be able to receive data from translators that are subscribed to it		
 		
 - Constellation:
 	
@@ -83,25 +83,25 @@ Everything on the LED network does one of there things: capture input, process i
 		- Recipes can include simple mapping effects, neural networks, iterative systems, complex events, generative functions, etc. 		
 		- There are no logical limits to how many recipes can be applied by the topology to the frame 
 
-- Sources:
+- Source:
 	
 		- Sources are any input that produces a data signal in real time.		
 		- Sources can be physical sensors, gestures, camera capture, etc. 		
-		- Sources are not connected to the network directly. Data from sources is relayed by way of receivers.		
+		- Sources are not connected to the network directly. Data from sources is relayed by way of collectors.		
 	
-- Receivers:
+- Collectors:
 	
-		- Receivers is any logical or hardware device that takes input from a source and passes it on to the controller		
-		- Receivers may receive data streams from multiple, heterogeneous sources. 		
-		- Receivers may also "flatten" data streams from multiple sources and pass on a single stream		
-		- The network can support multiple receivers, all of which publish to the controller 		
-		- Receivers may publish data streams to a translator
+		- Collectors are any logical or hardware devices that take input from a source and pass it on to the controller		
+		- Collectors may receive data streams from multiple, heterogeneous sources. 		
+		- Collectors may also "flatten" data streams from multiple sources and pass on a single stream		
+		- The network can support multiple Collectors, all of which publish to the controller 		
+		- Collectors may publish data streams to a translator
 		
 - Translators:
 	
-		- A translator is a logical component that accepts input from the receiver and converts it to output to be published by the controller.
-		- A translator requires three things:  the data from the receiver, the topology on which it intends to operate, a recipe which determines how the 
-		data from the recipe will be manipulated 		
+		- A translator is a logical component that accepts input from the collector and converts it to output to be published by the controller.
+		- A translator requires three things:  the data from the collector, the topology on which it intends to operate, a recipe which determines how the 
+		data will be manipulated. 		
 		- A translator publishes the result directly to the controller.		
 		- Translators can (and must) be scaled out, as they do the computational heavy lifting between data stream and visual output
 
@@ -117,7 +117,7 @@ Design constraints are constraints on the structure of the network itself.  Thes
 
 - The delay between capture from a source and rendering to an LED node should be minimized, and may depend on the type of interaction being processed.
 	
-- Receivers, controllers, translators, and nodes should be completely decoupled and allow for horizontal scaling. 
+- Collectors, controllers, translators, and nodes should be completely decoupled and allow for horizontal scaling. 
 	
 - Error detection/correction is strongly desired but not an immediately design goal. 
 	
@@ -160,7 +160,7 @@ A fledgling list of metrics used to analyze the LED network
 
 # Questions For Further Research
   
-  1. Is separation between receiver and translator necessary?
+  1. Is separation between collector, translator, and recipe fully necessary?
   2. How does a translator know about the details of a topology?	
   3. How will the network be described logically? 
   4. What latency does horizontal scaling introduce as more and more nodes/controllers are attached to the system?
