@@ -1,48 +1,152 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
-/* Set these to your desired credentials. */
-const char *ssid = "AutomorphicSystems"; //Enter your WIFI ssid
-const char *password = "walkingonthemoon"; //Enter your WIFI password
+#include <FastLED.h>
+#include <limits.h>
+
+#define LED_PIN 7
+#define NUM_LEDS 30
+#define UCHAR_MAX 255
+
+/* WiFi Credentials */
+const char *ssid = "AutomorphicSystems"; //WIFI ssid
+const char *password = "walkingonthemoon"; //WIFI password
+
+CRGB leds[NUM_LEDS];
 ESP8266WebServer server(80);
-void handleRoot() {
- server.send(200, "text/html", "<h2>LED Builtin Button </h2><br/><form action=\"/LED_BUILTIN_on\" method=\"get\" id=\"form1\"></form><button type=\"submit\" form=\"form1\" value=\"On\">On</button><form action=\"/LED_BUILTIN_off\" method=\"get\" id=\"form2\"></form><button type=\"submit\" form=\"form2\" value=\"Off\">Off</button>");
-}
-void handleSave() {
- if (server.arg("pass") != "") {
-   Serial.println(server.arg("pass"));
- }
-}
+
+
+/* Setup  */
 void setup() {
  pinMode(LED_BUILTIN, OUTPUT);
- delay(3000);
+ delay(500);
  Serial.begin(115200);
- Serial.println();
- Serial.print("Configuring access point...");
- WiFi.begin(ssid, password);
- while (WiFi.status() != WL_CONNECTED) {
-   delay(500);
-   Serial.print(".");
- }
- Serial.println("");
- Serial.println("WiFi connected");
- Serial.println("IP address: ");
- Serial.println(WiFi.localIP());
- server.on ( "/", handleRoot );
- server.on ("/save", handleSave);
- server.begin();
- Serial.println ( "HTTP server started" );
- server.on("/LED_BUILTIN_on", []() {
-   digitalWrite(LED_BUILTIN, 1);
-   Serial.println("on");
-   handleRoot();
- });
- server.on("/LED_BUILTIN_off", []() {
-   digitalWrite(LED_BUILTIN, 0);
-   Serial.println("off");
-   handleRoot();
- });
+
+ setupWifi();
+
+ setupWebHost(); 
+ 
+ setupLEDs();
+
+ /* Do I need these */
+ pinMode(D4, OUTPUT);
+ digitalWrite(D4, HIGH);
+ 
+ testLEDs();
+
+ Serial.println("Listening for requests!");
 }
+
+/* Loop */
 void loop() {
- server.handleClient();
+  server.handleClient();
 } 
+
+/* WiFi Setup */
+void setupWifi() {
+  Serial.print("Configuring access point...");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());  
+}
+
+/* Web Setup */
+void setupWebHost() {
+  server.on("/", handleRoot);
+  server.on("/led_on", handleLedOn);
+  server.on("/led_off", handleLedOff);
+  server.on("/set_rgb_color", HTTP_POST, handleSetRGBColor);
+  server.on("/set_hsv_color", HTTP_POST, handleSetHSVColor);
+  server.on("/clear", handleClearLeds);
+  server.begin();
+  Serial.println ( "HTTP server started" );  
+}
+
+/* Initialization Test */
+void testLEDs() {    
+  Serial.println("LED test started");
+  static uint8_t hue = 0;
+  while(hue < UCHAR_MAX) {
+    FastLED.showColor(CHSV(hue++, 255, 255)); 
+    delay(20);
+  }
+  FastLED.clear();
+  FastLED.show();
+  Serial.println("LED test completed");
+}
+
+/* Setup LEDs */
+void setupLEDs() {
+   FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS);
+   Serial.println("Activating LEDs"); 
+}
+
+/* Web server handlers */
+void handleRoot() {
+ server.send(200, "text/html", "<h2>Node MCU LED Host</h2><br/>IP Address - " + WiFi.localIP().toString()
+                 + "<br/>Number of LEDs: " + NUM_LEDS);
+}
+
+void handleSetRGBColor() {
+  delay(50); /* debounce */
+  Serial.println("handleSetRGBColor");
+  if (server.hasArg("pos") && 
+      (server.hasArg("rgb") || 
+       (server.hasArg("r") && server.hasArg("b") && server.hasArg("g")))) {
+    int position = server.arg("pos").toInt();    
+
+    if (!server.hasArg("rgb")) {
+       leds[position] = CRGB(server.arg("r").toInt(),server.arg("g").toInt(), server.arg("b").toInt());
+       Serial.println("RGB led draw");      
+    } else {
+       /* need to find an elegant way to convert string to hex RGB code */
+       Serial.println("Nothing drawn");
+    }
+    
+    FastLED.show();
+    server.send(200, "text/plain","{ result: 1 }");
+  } else {
+    server.send(400, "text/plain", "Request failed");
+  }
+}
+
+void handleSetHSVColor() {
+  delay(50); /* debounce */
+   Serial.println("handleSetHSVColor");
+  if (server.hasArg("pos") && 
+       server.hasArg("h") && server.hasArg("s") && server.hasArg("v")) {
+    int position = server.arg("pos").toInt();   
+        
+    leds[position] = CHSV(server.arg("h").toInt(),server.arg("s").toInt(), server.arg("v").toInt());     
+    Serial.println("HSV led draw");       
+    FastLED.show();
+    server.send(200, "text/plain","{ result: 1 }");
+  } else {
+    server.send(400, "text/plain", "Request failed");
+  }
+}
+
+void handleLedOn() {
+    Serial.println("Turning on board LED on..");
+    digitalWrite(LED_BUILTIN, 0);
+    server.send(200, "text/plain","{ result: 1 }");
+}
+
+void handleLedOff() {
+    Serial.println("Turning on board LED off..");
+    digitalWrite(LED_BUILTIN, 1);
+    server.send(200, "text/plain","{ result: 1 }");
+}
+
+void handleClearLeds() {
+    Serial.println("Resetting all LEDs..");
+    FastLED.clear();
+    FastLED.show();
+    server.send(200, "text/plain","{ result: 1 }");
+}
