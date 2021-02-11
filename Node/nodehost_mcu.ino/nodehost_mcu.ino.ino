@@ -2,7 +2,7 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <FastLED.h>
-#include <limits.h>
+#include <EasyDDNS.h>
 
 #define LED_PIN 7
 #define NUM_LEDS 30
@@ -13,7 +13,7 @@ const char *ssid = "AutomorphicSystems"; //WIFI ssid
 const char *password = "walkingonthemoon"; //WIFI password
 
 CRGB leds[NUM_LEDS];
-ESP8266WebServer server(80);
+ESP8266WebServer server(8000);
 
 
 /* Setup  */
@@ -63,6 +63,7 @@ void setupWebHost() {
   server.on("/led_off", handleLedOff);
   server.on("/set_rgb_color", HTTP_POST, handleSetRGBColor);
   server.on("/set_hsv_color", HTTP_POST, handleSetHSVColor);
+  server.on("/set_hsv_color_range", HTTP_POST, handleSetHSVColorRange);
   server.on("/clear", handleClearLeds);
   server.begin();
   Serial.println ( "HTTP server started" );  
@@ -149,4 +150,19 @@ void handleClearLeds() {
     FastLED.clear();
     FastLED.show();
     server.send(200, "text/plain","{ result: 1 }");
+}
+
+void handleSetHSVColorRange() {
+  delay(50); /* debounce */
+   Serial.println("handleSetHSVColorRange");
+     if (server.hasArg("pos") && server.hasArg("num") &&
+       server.hasArg("h") && server.hasArg("s") && server.hasArg("v")) {
+    int pos = server.arg("pos").toInt(); 
+    int num = server.arg("num").toInt(); 
+    fill_solid( &(leds[pos]), num, CHSV(server.arg("h").toInt(),server.arg("s").toInt(), server.arg("v").toInt()));
+    FastLED.show();
+    server.send(200, "text/plain","{ result: 1 }");
+  } else {
+    server.send(400, "text/plain", "Request failed");
+  }
 }
