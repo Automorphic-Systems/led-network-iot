@@ -7,6 +7,7 @@
 #define LED_PIN 7
 #define NUM_LEDS 30
 #define UCHAR_MAX 255
+#define FRAME_INTERVAL 32
 
 /* WiFi Credentials */
 const char *ssid = "AutomorphicSystems"; //WIFI ssid
@@ -72,10 +73,19 @@ void setupWebHost() {
 /* Initialization Test */
 void testLEDs() {    
   Serial.println("LED test started");
+  unsigned long currTime = 0, prevTime = 0;  
   static uint8_t hue = 0;
-  while(hue < UCHAR_MAX) {
-    FastLED.showColor(CHSV(hue++, 255, 255)); 
-    delay(20);
+  const unsigned long eventInterval = 32;
+  
+  while(hue < UCHAR_MAX) {         
+     currTime = millis();
+     if (currTime - prevTime >= eventInterval) {     
+        FastLED.showColor(CHSV(hue++, 255, 255)); 
+        prevTime = currTime;
+        delay(5);
+        Serial.println(currTime);
+        Serial.println("Color change");
+     }
   }
   FastLED.clear();
   FastLED.show();
@@ -95,7 +105,7 @@ void handleRoot() {
 }
 
 void handleSetRGBColor() {
-  delay(50); /* debounce */
+  delay(20); /* debounce */
   Serial.println("handleSetRGBColor");
   if (server.hasArg("pos") && 
       (server.hasArg("rgb") || 
@@ -118,7 +128,7 @@ void handleSetRGBColor() {
 }
 
 void handleSetHSVColor() {
-  delay(50); /* debounce */
+   delay(20); /* debounce */
    Serial.println("handleSetHSVColor");
   if (server.hasArg("pos") && 
        server.hasArg("h") && server.hasArg("s") && server.hasArg("v")) {
@@ -153,16 +163,16 @@ void handleClearLeds() {
 }
 
 void handleSetHSVColorRange() {
-  delay(50); /* debounce */
-   Serial.println("handleSetHSVColorRange");
-     if (server.hasArg("pos") && server.hasArg("num") &&
-       server.hasArg("h") && server.hasArg("s") && server.hasArg("v")) {
-    int pos = server.arg("pos").toInt(); 
-    int num = server.arg("num").toInt(); 
-    fill_solid( &(leds[pos]), num, CHSV(server.arg("h").toInt(),server.arg("s").toInt(), server.arg("v").toInt()));
-    FastLED.show();
-    server.send(200, "text/plain","{ result: 1 }");
-  } else {
-    server.send(400, "text/plain", "Request failed");
-  }
+    //delay(50); /* debounce */
+    Serial.println("handleSetHSVColorRange");
+    if (server.hasArg("pos") && server.hasArg("num") &&
+        server.hasArg("h") && server.hasArg("s") && server.hasArg("v")) {
+        int pos = server.arg("pos").toInt(); 
+        int num = server.arg("num").toInt(); 
+        fill_solid( &(leds[pos]), num, CHSV(server.arg("h").toInt(),server.arg("s").toInt(), server.arg("v").toInt()));
+        FastLED.show();
+        server.send(200, "text/plain","{ result: 1 }");
+    } else {
+        server.send(400, "text/plain", "Request failed");
+    }
 }
