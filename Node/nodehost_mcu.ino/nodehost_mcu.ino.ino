@@ -78,14 +78,18 @@ void testLEDs() {
   const unsigned long eventInterval = 32;
   
   while(hue < UCHAR_MAX) {         
-     currTime = millis();
-     if (currTime - prevTime >= eventInterval) {     
+      //Serial.println("");
+     //currTime = millis();
+     //if (currTime - prevTime >= eventInterval) {  
         FastLED.showColor(CHSV(hue++, 255, 255)); 
-        prevTime = currTime;
-        delay(5);
-        Serial.println(currTime);
+        //prevTime = currTime;
+        delay(1);
+        //Serial.println(millis());
         Serial.println("Color change");
-     }
+        //if (hue == UCHAR_MAX) {
+        //  hue = 0;
+       // }
+     //}
   }
   FastLED.clear();
   FastLED.show();
