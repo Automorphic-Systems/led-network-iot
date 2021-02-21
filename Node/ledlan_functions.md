@@ -124,7 +124,7 @@ Test Cases
 	set_mode:
 		
 		test effect: rainbow 
-		test effect: chase 
+		test effect: chase / offset
 		test effect: flicker 
 		test effect: automata
 		test palette changes 
