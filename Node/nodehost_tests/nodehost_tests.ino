@@ -5,21 +5,26 @@
 #include <stdio.h>
 
 #define LED_PIN 7
-#define NUM_LEDS 144
+#define NUM_LEDS 288
 #define UCHAR_MAX 255
-#define FRAME_INTERVAL 16
-#define HSV_DEFAULT_VALUE 128
+#define FRAME_INTERVAL 32
+#define HSV_DEFAULT_VALUE 160
 
 CRGB leds[NUM_LEDS];
+uint8_t leds_h[NUM_LEDS];
 CRGB seedLeds[NUM_LEDS];
+CRGBPalette16 currentPalette;
 char logbuffer [80];
 int logsize;
-char *modes[4] = {"timing", "rainbow", "chase", "offset"};
-
+char *modes[4] = {"timing", "rainbow", "chase", "flicker"};
+ 
 unsigned long currTime, prevTime, startTime, cycleTime;
 uint8_t hue;
 uint8_t pos;
-uint8_t offset;
+uint16_t offset;
+
+static int heatmap[NUM_LEDS];
+uint8_t seeds;
 
 /* Tests for NodeHost_MCU */
 
@@ -29,17 +34,20 @@ void setup() {
   /* Set pins */
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(D4, OUTPUT);
-  delay(500);
-  Serial.begin(115200);
+  delay(2500);
 
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-  Serial.println("Activating LEDs");
   startTime = millis();
   cycleTime = millis();
 
   pos, hue, currTime, prevTime, startTime, offset = 0;
-
+  Serial.begin(115200);
+  delay(100);
+  Serial.flush();
+  while ( Serial.available() ) Serial.read(); 
+  
   /* Print test parameters */
+  Serial.println("Activating LEDs");
   logsize = sprintf(logbuffer, "mode: %s, rate: %i", modes[2], FRAME_INTERVAL);
   Serial.println(logbuffer);
 
@@ -48,14 +56,15 @@ void setup() {
   //Serial.println("testMillis");
   //Serial.println("testLEDsRainbowDraw");
   //Serial.println("testLEDsSingleChaseDraw");
-  Serial.println("testLEDsOffsetDraw");
+  //Serial.println("testLEDsFullChaseDraw");
   //Serial.println("testLEDsRainbowMaxRate");
   //Serial.println("testLEDsSingleChaseMaxRate");
+  Serial.println("testFlickeringDraw");
 
   //* Setup tests */
-  //testPower();
+  //testMosfetSwitch();
 
-  generateRandomFrame(seedLeds);  
+  generateRandomPaletteFrame(seedLeds);  
 }
 
 /* Loop */
@@ -65,10 +74,12 @@ void loop() {
   //testMillis();
   //testLEDsRainbowDraw();
   //testLEDsSingleChaseDraw();
-  testLEDsOffsetDraw();
+  //testLEDsFullChaseDraw();
 
   //testLEDsRainbowMaxRate();
   //testLEDsSingleChaseMaxRate();
+  //testRandomPalettes();
+  testFlickeringDraw();
 }
 
 /* Test LED load being switched on/off via MOSFET */
@@ -151,25 +162,87 @@ void testLEDsSingleChaseDraw() {
   }
 }
 
-/* Offset test */
-void testLEDsOffsetDraw() {
+/* Full chase mode test, with palettes */
+void testLEDsFullChaseDraw() {
   /* Frame condition */
   if (currTime - prevTime > FRAME_INTERVAL) {
     for(int i=0;i<NUM_LEDS;i++) {
       leds[i] = seedLeds[(i + offset)% NUM_LEDS];
     }
-    offset++;
+    offset--;
     FastLED.show();
     
     prevTime = currTime;
     
-    /* Cycle condition */
-    if (offset == UCHAR_MAX) {
+    /* Cycle condition - flip offset to change chase direction*/
+    if (offset == 0) {
+      offset = UCHAR_MAX;
+      logsize = sprintf(logbuffer, "mode: %s, rate: %i, leds: %i, time: %i ms", modes[2], FRAME_INTERVAL, NUM_LEDS, millis() - cycleTime);
+      Serial.println(logbuffer);
+      cycleTime = millis();
+      generateRandomPaletteFrame(seedLeds);
+    } 
+  }
+}
+
+/* Flickering mode test, with palettes */
+void testFlickeringDraw() {
+  /* Frame condition */
+  if (currTime - prevTime > FRAME_INTERVAL) {
+    randomSeed(analogRead(0));
+    seeds = random16(10, NUM_LEDS - 10);
+
+    for ( int i = 0; i < NUM_LEDS; i++) {
+        heatmap[i] = qsub8( heatmap[i], 6);
+    }
+    
+    for ( int j = 0 ; j < seeds ; j++) {
+     if (random8() < 32) {
+      //again, we have to mix things up so the same locations don't always light up
+      randomSeed(analogRead(0));
+      heatmap[random16(NUM_LEDS)] = random16(48, 160);
+     }
+    }
+
+    for ( int k = 0 ; k < NUM_LEDS ; k++ ) {
+      if (heatmap[k] > 0 && random8() < 100) {
+        heatmap[k] = qadd8(heatmap[k] , 5);
+      }
+    }
+
+    for ( int j = 0; j < NUM_LEDS; j++)
+    {
+      leds[j].setHSV(leds_h[j], 255, heatmap[j]);
+    }
+    offset++;
+
+    FastLED.show();    
+    prevTime = currTime;
+    
+    if (offset == 1024) {
       offset = 0;
+      seeds = random16(NUM_LEDS - 20 , NUM_LEDS);
+      FastLED.clear();
+
+      for ( int i = 0 ; i < seeds ; i++) 
+      {
+         int pos = random16(NUM_LEDS);
+         randomSeed(analogRead(0));
+         heatmap[pos] = random8(50, 255);
+      }
+
+      currentPalette = generateRandomPalette(3);
+      for ( int j = 0; j < NUM_LEDS; j++)
+      {
+        CRGB currLed = ColorFromPalette( currentPalette, random8(0, 15), heatmap[j], LINEARBLEND);
+        leds[j] = currLed;
+        leds_h[j] = rgb2hsv_approximate( currLed ).h;
+      }
+      
+      FastLED.show();
       logsize = sprintf(logbuffer, "mode: %s, rate: %i, leds: %i, time: %i ms", modes[3], FRAME_INTERVAL, NUM_LEDS, millis() - cycleTime);
       Serial.println(logbuffer);
       cycleTime = millis();
-      generateRandomFrame(leds);
     } 
   }
 }
@@ -219,9 +292,46 @@ void generateRandomFrame(CRGB frame[]) {
   randomSeed(analogRead(0));
   
   for (int i = 0; i < NUM_LEDS; i++) {
-    //frame[i].r = random(UCHAR_MAX);
-    //frame[i].g = random(UCHAR_MAX);
-    //frame[i].b = random(UCHAR_MAX);
     frame[i].setHSV(random(UCHAR_MAX), random(UCHAR_MAX), random(HSV_DEFAULT_VALUE));
   }
+}
+
+void generateRandomPaletteFrame(CRGB frame[]) {
+  
+  currentPalette = generateRandomPalette(3);
+  
+  uint8_t colIdx;
+  colIdx = 1;
+  for (int i = 0; i < NUM_LEDS; i++) {
+    frame[i] = ColorFromPalette( currentPalette, colIdx, HSV_DEFAULT_VALUE, LINEARBLEND);
+    colIdx += 1;
+  }
+}
+
+
+CRGBPalette16 generateRandomPalette(uint8_t colCount) {
+  CRGBPalette16 palette;
+  
+  CRGB colorSet[colCount];
+  randomSeed(analogRead(0));
+  
+  for (int j = 0; j < colCount; j++) {
+    colorSet[j] = CHSV(random8(), 255, HSV_DEFAULT_VALUE);
+  }
+  
+  for( int i = 0; i < 16; ++i) {
+        palette[i] = colorSet[i % colCount];
+  }
+
+  return palette;  
+}
+
+
+CHSV TwinkleColor( int temperature)
+{
+  CHSV heatcolor;
+  heatcolor.hue = 60;
+  heatcolor.saturation = 255;
+  heatcolor.value = temperature;
+  return heatcolor;
 }
