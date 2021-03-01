@@ -78,12 +78,12 @@ void setup() {
   cycleTime = millis();  
   currentPalette = generateRandomPalette(pal_cols);
   generateRandomFrameFromPalette(seedLeds);
+  currentMode = modes[3];
 }
 
 /* Loop */
 void loop() {
   currTime = millis();
-  currentMode = modes[3];
   
   //testMillis();
   if (currTime - prevTime > FRAME_INTERVAL) {
