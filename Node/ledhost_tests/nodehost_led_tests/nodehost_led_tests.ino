@@ -72,7 +72,7 @@ void setup() {
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
 
   /* Test MOSFET switch */
-  //testMosfetSwitch();
+  testMosfetSwitch();
 
   startTime = millis();
   cycleTime = millis();  
@@ -110,15 +110,18 @@ void testMosfetSwitch() {
   int powCnt = 0;
 
   Serial.println("Drawing LEDs.");
-  FastLED.showColor(CHSV(128, 255, HSV_DEFAULT_VALUE));
+  FastLED.showColor(CRGB(255,0,0),HSV_DEFAULT_VALUE);
 
   for (powCnt = 0; powCnt < 5; powCnt++) {
     Serial.println("Turning on.");
     digitalWrite(D4, LOW);
     delay(2000);
-
+    
+    FastLED.showColor(CRGB(128,0,128),128);
+    delay(2000);
+    
     Serial.println("Turning off.");
-    digitalWrite(D4, HIGH); /* LEDs should go dark */
+    digitalWrite(D4, HIGH); /* LEDs should go dark */    
     delay(2000);
   }
 

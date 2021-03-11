@@ -39,14 +39,15 @@ unsigned long currTime, prevTime, startTime, cycleTime;
 uint8_t hue;
 uint16_t pos;
 int16_t offset;
-uint8_t seeds, pal_cols;
+uint8_t seeds, color_count;
 int8_t chase_rate;
 int16_t iter, maxiter;
 uint8_t fade_rate, boost_rate, boost_thr, twink_thr, twink_min, twink_max, seed_amt;
 
 /* Setup  */
 void setup() {
-
+    Serial.println("Starting LED HOST");
+    
     /* Set pins, clear UART */  
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(D4, OUTPUT);
@@ -61,8 +62,9 @@ void setup() {
 
     /* General */
     pos, hue, currTime, prevTime, startTime, offset, iter = 0;
-    pal_cols = 2;
+    color_count = 2;
     maxiter = NUM_LEDS;
+    cycle = 0;
 
     /* Chase */
     chase_rate = 2;
@@ -99,7 +101,8 @@ void loop() {
 
     /* Render the display */
     if (currTime - prevTime > FRAME_INTERVAL) {
-      
+        setMode();
+         
         FastLED.show();       
         prevTime = currTime;      
     }
@@ -137,6 +140,135 @@ void setupWebHost() {
   Serial.println ( "HTTP server started" );  
 }
 
+/* Set Mode */
+void setMode() {
+    if (currentMode == "rainbow") {
+        setMode_Rainbow();
+    }  
+
+    if (currentMode == "chase") {
+        setMode_Chase();
+    }    
+
+    if (currentMode == "streak") {
+        setMode_Streak();
+    }
+
+    if (currentMode == "flicker") {
+        setMode_Flicker();
+    }
+
+}
+
+void setMode_Rainbow() {
+    FastLED.showColor(CHSV(hue++, 255, HSV_DEFAULT_VALUE));
+
+    /* Reset condition */
+    if (hue >= UCHAR_MAX) {
+        hue = 0;
+        cycle = 1;
+    }
+}
+
+void setMode_Streak() {
+    leds[pos] = CHSV(hue, 0, 0);
+    
+    if (pos < NUM_LEDS - 1) {
+       pos++;
+    } else {      
+       /* Reset condition */
+       pos = 0;
+       cycle = 1;
+    }
+    
+    leds[pos] = CHSV(mod8(hue++,UCHAR_MAX), 255, 255);
+}
+
+void setMode_Chase() {
+    for(int i=0;i<NUM_LEDS;i++) {
+        leds[i] = seedLeds[(i + offset)% NUM_LEDS];
+    }
+    offset = (offset+chase_rate+NUM_LEDS)%NUM_LEDS;    
+    iter++;
+    
+    /* Reset condition */
+    if (iter == maxiter) {
+        iter = 0;
+        offset = 0;      
+        cycle = 1;
+        generateRandomFrameFromPalette(seedLeds);
+    } 
+}
+
+void setMode_Flicker() {
+    random16_add_entropy( random(UCHAR_MAX));
+    seeds = random16(seed_amt, NUM_LEDS - seed_amt);
+
+    /* Fading */
+    for ( int i = 0; i < NUM_LEDS; i++) {
+        heatmap[i] = qsub8( heatmap[i], fade_rate);
+    }
+
+    /* Twinkle */
+    for ( int j = 0 ; j < seeds ; j++) {
+     if (random8() < twink_thr) {
+      //again, we have to mix things up so the same locations don't always light up
+      randomSeed(analogRead(0));
+      heatmap[random16(NUM_LEDS)] = random16(twink_min, twink_max);
+     }
+    }
+
+    /* Boosting */
+    for ( int k = 0 ; k < NUM_LEDS ; k++ ) {
+      if (heatmap[k] > 0 && random8() < boost_thr) {
+        heatmap[k] = qadd8(heatmap[k] , boost_rate);
+      }
+    }
+    
+    for ( int j = 0; j < NUM_LEDS; j++)
+    {
+      leds[j].setHSV(leds_h[j], 255, heatmap[j]);
+    }
+    offset++;
+
+    /* Reset condition */
+    if (offset == maxiter) {
+      resetMode_Flicker();
+    }   
+}
+
+void resetMode_Flicker() {
+    offset = 0;
+    FastLED.clearData();
+
+    seeds = random16(NUM_LEDS - seed_amt , NUM_LEDS);
+      
+    /* Reset heatmap */
+    for (int i = 0; i< NUM_LEDS; i++)
+    {
+        heatmap[i] = 128;
+        leds[i].setHSV(leds_h[i], 255, 0);
+    }
+      
+    for ( int i = 0 ; i < seeds ; i++) 
+    {
+        random16_add_entropy( random(UCHAR_MAX));
+        int pos = random16(NUM_LEDS);
+        heatmap[pos] = random16(twink_min, twink_max);
+    }
+
+    currentPalette = generateRandomPalette(color_count);
+    CRGB currLed;
+      
+    for ( int j = 0; j < NUM_LEDS; j++)
+    {
+        currLed = ColorFromPalette( currentPalette, random16(0, 15), heatmap[j], LINEARBLEND);
+        leds[j] = currLed;
+        leds_h[j] = rgb2hsv_approximate( currLed ).h;
+    }
+            
+    cycle = 1;
+}
 
 /* Web server handlers */
 void handleRoot() {
@@ -153,7 +285,42 @@ void handleClearLeds() {
 
 
 void handleMode() {
-  
+    FastLED.clear();
+    currentDisplay = "mode";
+    
+    if (server.arg("mode") == "rainbow") {
+       currentMode = modes[0];
+    }
+
+    if (server.arg("mode") == "streak") {
+       currentMode = modes[1];
+       pos = 0;
+    }
+
+    if (server.arg("mode") == "chase") {
+        currentMode = modes[2];
+        chase_rate = server.arg("chase_rate").toInt();
+        color_count = server.arg("color_count").toInt();
+        currentPalette = generateRandomPalette(color_count);
+        generateRandomFrameFromPalette(seedLeds);
+        offset = 0;
+        iter = 0;        
+    }    
+
+    if (server.arg("mode") == "flicker") {
+        currentMode = modes[3];
+        twink_min = server.arg("twink_min").toInt();
+        twink_max = server.arg("twink_max").toInt();
+        color_count = server.arg("color_count").toInt();
+        fade_rate = server.arg("fade_rate").toInt();
+        twink_thr = server.arg("twink_thr").toInt();
+        boost_thr = server.arg("boost_thr").toInt();
+        boost_rate = server.arg("boost_rate").toInt();
+        seed_amt = server.arg("seed_amt").toInt();        
+        resetMode_Flicker();
+    }
+        
+    cycle = 1;
     server.send(200, "text/plain","{ result: 1 }");
 }
 
@@ -177,7 +344,7 @@ void generateRandomFrame(CRGB frame[]) {
 }
 
 void generateRandomFrameFromPalette(CRGB frame[]) {  
-  currentPalette = generateRandomPalette(pal_cols);
+  currentPalette = generateRandomPalette(color_count);
   
   uint8_t colIdx = 1;
   for (int i = 0; i < NUM_LEDS; i++) {

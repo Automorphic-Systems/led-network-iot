@@ -134,7 +134,7 @@ Test Cases
 		test effect: single color cycle (done)
 			parameters: color set (all would be "rainbow"), blending, cycle rate  
 		test effect: chase / offset (done)
-			parameters: color set/palette, direction, cycle rate
+			parameters: color set/palette, chase rate, cycle rate
 		test effect: flicker / twinkle 
 			parameters: seedsize, seedmin, faderate, boost_rate twinkle_min, twinkle_max, boost_threshold, cycle rate, palette 
 		test effect: iterative 
