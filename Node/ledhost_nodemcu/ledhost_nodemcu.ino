@@ -7,11 +7,11 @@
 
 #define LED_PIN 7
 #define UCHAR_MAX 255
-#define NUM_LEDS 288
+#define NUM_LEDS 114
 #define DEFAULT_PORT 8000
 #define DEFAULT_INTERVAL 32
-#define DEFAULT_BRIGHTNESS 160
-#define DEFAULT_WIFI_TIMEOUT 15000
+#define DEFAULT_BRIGHTNESS 224
+#define DEFAULT_WIFI_TIMEOUT 20000
 #define LEDHOST_CONFIG "/ledhost_config.json"
 
 /* Memory for config file */
@@ -78,7 +78,7 @@ void setup() {
     /* General */
     pos, hue, currTime, prevTime, startTime, offset, iter = 0;
     color_count = 2;
-    maxiter = NUM_LEDS;
+    //maxiter = NUM_LEDS;
     cycle = 0;
     is_conn = false;
 
@@ -161,6 +161,7 @@ void loadConfig() {
             port_num = configFile["http_port"];
             currentDisplay = displayType[configFile["default_display"].as<int>()];
             currentMode = modes[configFile["default_mode"].as<int>()];     
+            maxiter = configFile["default_max_iter"];
         }   
        SPIFFS.end();    
     } 
@@ -364,6 +365,7 @@ void handleMode() {
         currentMode = modes[2];
         chase_rate = server.arg("chase_rate").toInt();
         color_count = server.arg("color_count").toInt();
+        maxiter = server.arg("max_iter").toInt();
         currentPalette = generateRandomPalette(color_count);
         generateRandomFrameFromPalette(seedLeds);
         offset = 0;
@@ -379,7 +381,8 @@ void handleMode() {
         twink_thr = server.arg("twink_thr").toInt();
         boost_thr = server.arg("boost_thr").toInt();
         boost_rate = server.arg("boost_rate").toInt();
-        seed_amt = server.arg("seed_amt").toInt();        
+        seed_amt = server.arg("seed_amt").toInt();     
+        maxiter = server.arg("max_iter").toInt();
         resetMode_Flicker();
     }
         
