@@ -2,19 +2,28 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <FastLED.h>
+#include <FS.h>
+#include <ArduinoJson.h>
 
 #define LED_PIN 7
-#define NUM_LEDS 288
 #define UCHAR_MAX 255
-#define FRAME_INTERVAL 32
-#define HSV_DEFAULT_VALUE 160
+#define NUM_LEDS 288
+#define DEFAULT_PORT 8000
+#define DEFAULT_INTERVAL 32
+#define DEFAULT_BRIGHTNESS 160
+#define DEFAULT_WIFI_TIMEOUT 15000
+#define LEDHOST_CONFIG "/ledhost_config.json"
+
+/* Memory for config file */
+StaticJsonDocument<1024> configFile;
 
 /* WiFi Credentials */
-const char *ssid = "AutomorphicSystems"; //WIFI ssid
-const char *password = "walkingonthemoon"; //WIFI password
+const char *ssid;
+const char *password;
 
 /* HTTP Setup */
-ESP8266WebServer server(8000);
+ESP8266WebServer server(DEFAULT_PORT);
+uint16_t port_num;
 
 /* LED and heatmap values*/
 CRGB leds[NUM_LEDS];
@@ -44,10 +53,13 @@ int8_t chase_rate;
 int16_t iter, maxiter;
 uint8_t fade_rate, boost_rate, boost_thr, twink_thr, twink_min, twink_max, seed_amt;
 
+/* Config Parameters */
+uint8_t brightness;
+uint8_t frame_int;
+bool is_conn;
+
 /* Setup  */
 void setup() {
-    Serial.println("Starting LED HOST");
-    
     /* Set pins, clear UART */  
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(D4, OUTPUT);
@@ -56,7 +68,10 @@ void setup() {
     delay(500);
     Serial.flush();
     while ( Serial.available() ) Serial.read(); 
-
+    Serial.println("Starting LED HOST");
+    
+    /* Load configuration */
+    loadConfig();
     
     Serial.println("Initializing parameters, activating LEDs");
 
@@ -65,6 +80,7 @@ void setup() {
     color_count = 2;
     maxiter = NUM_LEDS;
     cycle = 0;
+    is_conn = false;
 
     /* Chase */
     chase_rate = 2;
@@ -82,14 +98,12 @@ void setup() {
     setupWifi();
 
     /* Set up web server */
-    setupWebHost(); 
- 
+    if (is_conn) {
+      setupWebHost(); 
+    }
+    
     /* Set LED strip */
     FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
-
-    currentDisplay = displayType[1];
-    currentMode = modes[0];
-
 }
 
 /* Loop */
@@ -100,33 +114,82 @@ void loop() {
     server.handleClient();
 
     /* Render the display */
-    if (currTime - prevTime > FRAME_INTERVAL) {
-        setMode();
-         
+    if (currTime - prevTime > DEFAULT_INTERVAL) {
+        setMode();         
         FastLED.show();       
         prevTime = currTime;      
     }
 
     /* Log after each complete cycle of frames */
     if (cycle) {    
-        logsize = sprintf(logbuffer, "display: %s, mode: %s, rate: %i, leds: %i, time: %i ms", currentDisplay, currentMode, FRAME_INTERVAL, NUM_LEDS, millis() - cycleTime);
+        logsize = sprintf(logbuffer, "display: %s, mode: %s, rate: %i, leds: %i, time: %i ms", currentDisplay, currentMode, DEFAULT_INTERVAL, NUM_LEDS, millis() - cycleTime);
         Serial.println(logbuffer);
         cycleTime = millis();
         cycle = 0;
     }  
 } 
 
+/* Load Configuration */
+void loadConfig() {
+    if (SPIFFS.begin()) {
+        Serial.println("Reading configuration..");
+    
+        File f = SPIFFS.open(LEDHOST_CONFIG, "r");
+    
+        if (f && f.size()) {
+            Serial.println("Opening config..");
+            size_t filesize = f.size();
+            
+            char jsonData[filesize+1];
+            f.read((uint8_t *)jsonData, sizeof(jsonData));
+            f.close();
+            jsonData[filesize]='\0';
+            
+            Serial.println("Config: ");
+            Serial.println(jsonData);
+            
+            DeserializationError error = deserializeJson(configFile, jsonData);
+
+            if (error) {
+                Serial.println("Failure to parse config file");
+                return;
+            }
+            
+            ssid = configFile["wifi_ssid"];
+            password = configFile["wifi_pwd"];
+            brightness = configFile["default_brightness"];
+            port_num = configFile["http_port"];
+            currentDisplay = displayType[configFile["default_display"].as<int>()];
+            currentMode = modes[configFile["default_mode"].as<int>()];     
+        }   
+       SPIFFS.end();    
+    } 
+}
+
 /* WiFi Setup */
 void setupWifi() {
-    Serial.print("Configuring access point...");
+    unsigned long wifi_time = millis();
+    Serial.print("Configuring access point...");            
     WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
+    bool is_timeout = false;
+
+    while ((WiFi.status() != WL_CONNECTED) && (!is_timeout)) {
+        if (millis() - wifi_time < DEFAULT_WIFI_TIMEOUT) {
+            delay(1000);
+            Serial.print(".");
+        } else {
+            is_timeout = true;
+        }
+    }   
+    
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("");
+        Serial.println("WiFi connected \n\r\ IP address: ");
+        Serial.println(WiFi.localIP());  
+        is_conn = true;
+    } else {
+        Serial.println("Wifi not connected.\n Web server not enabled.\n Using default settings.");
     }
-    Serial.println("");
-    Serial.println("WiFi connected \n\r\ IP address: ");
-    Serial.println(WiFi.localIP());  
 }
 
 /* Web Setup */
@@ -161,7 +224,7 @@ void setMode() {
 }
 
 void setMode_Rainbow() {
-    FastLED.showColor(CHSV(hue++, 255, HSV_DEFAULT_VALUE));
+    FastLED.showColor(CHSV(hue++, 255, DEFAULT_BRIGHTNESS));
 
     /* Reset condition */
     if (hue >= UCHAR_MAX) {
@@ -274,7 +337,7 @@ void resetMode_Flicker() {
 void handleRoot() {
     server.send(200, "text/html", "<h2>Node MCU LED Host</h2><br/>IP Address - " + WiFi.localIP().toString()
                  + "<br/>Number of LEDs: " + NUM_LEDS
-                 + "<br/>Frame internval: " + FRAME_INTERVAL + " ms");
+                 + "<br/>Frame interval: " + DEFAULT_INTERVAL + " ms");
 }
 
 void handleClearLeds() {
@@ -339,7 +402,7 @@ void handleConfig() {
 void generateRandomFrame(CRGB frame[]) {    
   for (int i = 0; i < NUM_LEDS; i++) {
     random16_add_entropy( random(UCHAR_MAX));
-    frame[i].setHSV(random(UCHAR_MAX), random(UCHAR_MAX), random(HSV_DEFAULT_VALUE));
+    frame[i].setHSV(random(UCHAR_MAX), random(UCHAR_MAX), random(DEFAULT_BRIGHTNESS));
   }
 }
 
@@ -348,7 +411,7 @@ void generateRandomFrameFromPalette(CRGB frame[]) {
   
   uint8_t colIdx = 1;
   for (int i = 0; i < NUM_LEDS; i++) {
-    frame[i] = ColorFromPalette( currentPalette, colIdx, HSV_DEFAULT_VALUE, LINEARBLEND);
+    frame[i] = ColorFromPalette( currentPalette, colIdx, DEFAULT_BRIGHTNESS, LINEARBLEND);
     colIdx += 1;
   }
 }
@@ -360,7 +423,7 @@ CRGBPalette16 generateRandomPalette(uint8_t colCount) {
   
     for (int j = 0; j < colCount; j++) {
         random16_add_entropy( random(UCHAR_MAX));
-        colorSet[j] = CHSV(random16(0, UCHAR_MAX), 255, HSV_DEFAULT_VALUE);
+        colorSet[j] = CHSV(random16(0, UCHAR_MAX), 255, DEFAULT_BRIGHTNESS);
     }
   
     for( int i = 0; i < 16; ++i) {

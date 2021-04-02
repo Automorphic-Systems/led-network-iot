@@ -1,14 +1,21 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+#include <FS.h>
+#include <ArduinoJson.h>
 
+/* Config file */
+#define LEDHOST_CONFIG "/ledhost_config.json"
+
+StaticJsonDocument<1024> configFile;
 
 /* WiFi Credentials */
-const char *ssid = "AutomorphicSystems"; //WIFI ssid
-const char *password = "walkingonthemoon"; //WIFI password
+const char* ssid;
+const char* password;
 
 /* HTTP Setup */
 ESP8266WebServer server(8000);
+
 
 /* Setup  */
 void setup() {
@@ -21,6 +28,9 @@ void setup() {
   delay(500);
   Serial.flush();
   while ( Serial.available() ) Serial.read(); 
+
+  /* Verify config file */
+  testLoadConfig();
 
   /* Verify wi-fi connectivity */  
   testWifiSetup();
@@ -84,4 +94,41 @@ void testPost() {
     response += server.arg("test");
     response += "'}";
     server.send(200, "text/plain", response);
+}
+
+void testLoadConfig() {
+  
+    if (SPIFFS.begin()) {
+        Serial.println("Reading from file system..");
+    
+        File f = SPIFFS.open(LEDHOST_CONFIG, "r");
+    
+        if (f && f.size()) {
+            Serial.println("Opening config..");
+            size_t filesize = f.size();
+            
+            char jsonData[filesize+1];
+            f.read((uint8_t *)jsonData, sizeof(jsonData));
+            f.close();
+            jsonData[filesize]='\0';
+            
+            Serial.println("Output of config file: ");
+            Serial.println(jsonData);
+            
+            DeserializationError error = deserializeJson(configFile, jsonData);
+
+            if (error) {
+                Serial.println("Failure to parse json data");
+                return;
+            }
+
+            ssid = configFile["wifi_ssid"];
+            password = configFile["wifi_pwd"]; 
+
+            Serial.print("SSID: ");
+            Serial.println(ssid);
+            Serial.print("Password: ");    
+            Serial.println(password);            
+        }    
+    }
 }

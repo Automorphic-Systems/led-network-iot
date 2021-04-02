@@ -4,7 +4,7 @@
 #define LED_PIN 7
 #define NUM_LEDS 288
 #define UCHAR_MAX 255
-#define FRAME_INTERVAL 64
+#define FRAME_INTERVAL 32
 #define HSV_DEFAULT_VALUE 160
 
 /*
@@ -72,7 +72,7 @@ void setup() {
   FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
 
   /* Test MOSFET switch */
-  testMosfetSwitch();
+  //testMosfetSwitch();
 
   startTime = millis();
   cycleTime = millis();  
