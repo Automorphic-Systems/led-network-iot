@@ -4,7 +4,7 @@
 #define LED_PIN 7
 #define NUM_LEDS 288
 #define UCHAR_MAX 255
-#define FRAME_INTERVAL 64
+#define FRAME_INTERVAL 32
 #define HSV_DEFAULT_VALUE 160
 
 /*
@@ -78,12 +78,12 @@ void setup() {
   cycleTime = millis();  
   currentPalette = generateRandomPalette(pal_cols);
   generateRandomFrameFromPalette(seedLeds);
+  currentMode = modes[3];
 }
 
 /* Loop */
 void loop() {
   currTime = millis();
-  currentMode = modes[3];
   
   //testMillis();
   if (currTime - prevTime > FRAME_INTERVAL) {
@@ -110,15 +110,18 @@ void testMosfetSwitch() {
   int powCnt = 0;
 
   Serial.println("Drawing LEDs.");
-  FastLED.showColor(CHSV(128, 255, HSV_DEFAULT_VALUE));
+  FastLED.showColor(CRGB(255,0,0),HSV_DEFAULT_VALUE);
 
   for (powCnt = 0; powCnt < 5; powCnt++) {
     Serial.println("Turning on.");
     digitalWrite(D4, LOW);
     delay(2000);
-
+    
+    FastLED.showColor(CRGB(128,0,128),128);
+    delay(2000);
+    
     Serial.println("Turning off.");
-    digitalWrite(D4, HIGH); /* LEDs should go dark */
+    digitalWrite(D4, HIGH); /* LEDs should go dark */    
     delay(2000);
   }
 

@@ -11,14 +11,12 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://192.168.1.22/led_on",
+					"raw": "http://{{DEFAULT_URL}}:{{DEFAULT_PORT}}/led_on",
 					"protocol": "http",
 					"host": [
-						"192",
-						"168",
-						"1",
-						"22"
+						"{{DEFAULT_URL}}"
 					],
+					"port": "{{DEFAULT_PORT}}",
 					"path": [
 						"led_on"
 					]
@@ -53,16 +51,14 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://192.168.1.22/led_on",
+					"raw": "http://{{DEFAULT_URL}}:{{DEFAULT_PORT}}/led_off",
 					"protocol": "http",
 					"host": [
-						"192",
-						"168",
-						"1",
-						"22"
+						"{{DEFAULT_URL}}"
 					],
+					"port": "{{DEFAULT_PORT}}",
 					"path": [
-						"led_on"
+						"led_off"
 					]
 				}
 			},
@@ -229,6 +225,54 @@
 						"api",
 						"ipify",
 						"org"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send test GET",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{DEFAULT_URL}}:{{DEFAULT_PORT}}/testget",
+					"protocol": "http",
+					"host": [
+						"{{DEFAULT_URL}}"
+					],
+					"port": "{{DEFAULT_PORT}}",
+					"path": [
+						"testget"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send test POST",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "test",
+							"value": "Some test data2",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://{{DEFAULT_URL}}:{{DEFAULT_PORT}}/testpost",
+					"protocol": "http",
+					"host": [
+						"{{DEFAULT_URL}}"
+					],
+					"port": "{{DEFAULT_PORT}}",
+					"path": [
+						"testpost"
 					]
 				}
 			},
