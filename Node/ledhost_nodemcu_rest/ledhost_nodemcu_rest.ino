@@ -391,11 +391,16 @@ void handleMode() {
 }
 
 void handleFrame() {
+    FastLED.clear();
+    currentDisplay = "frame";
+    
+    // need to convert binary to LED array
+    
+    setFrame()
     server.send(200, "text/plain","{ result: 1 }");
 }
 
-void handleConfig() {
-  
+void handleConfig() {  
     server.send(200, "text/plain","{ result: 1 }");
 }
 

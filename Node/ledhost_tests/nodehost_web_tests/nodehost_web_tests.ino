@@ -62,6 +62,7 @@ void testWebHostSetup() {
     server.on("/", handleRoot);
     server.on("/testget", testGet);
     server.on("/testpost", HTTP_POST, testPost);
+    server.on("/testbinarypost", HTTP_POST, testBinaryPost);
     server.on("/led_on", handleLedOn);
     server.on("/led_off", handleLedOff);
     server.begin();
@@ -90,12 +91,26 @@ void testGet() {
 }
 
 void testPost() {   
+    Serial.println("Text post detected...");
+    
     String response = "{ result: '";
     response += server.arg("test");
     response += "'}";
     server.send(200, "text/plain", response);
 }
 
+void testBinaryPost() {
+    Serial.println("Binary post detected...");
+    
+    for (int x=0; x <= server.args(); x++) {
+        Serial.println(server.arg(x));
+    }
+  
+    //Print out the amount of arguments received in POST payload
+    Serial.println(server.args());
+  
+    server.send(200, "text/plain", "binary data sent");
+}
 void testLoadConfig() {
   
     if (SPIFFS.begin()) {
