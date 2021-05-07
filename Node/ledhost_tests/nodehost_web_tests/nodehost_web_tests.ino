@@ -6,12 +6,14 @@
 
 /* Config file */
 #define LEDHOST_CONFIG "/ledhost_config.json"
+#define DEFAULT_WIFI_TIMEOUT 90000
 
 StaticJsonDocument<1024> configFile;
 
 /* WiFi Credentials */
 const char* ssid;
 const char* password;
+bool is_conn;
 
 /* HTTP Setup */
 ESP8266WebServer server(8000);
@@ -23,11 +25,12 @@ void setup() {
   /* Set pins, clear UART */  
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(D4, OUTPUT);
-  delay(2000);
+  delay(5000);
   Serial.begin(115200);
   delay(500);
   Serial.flush();
   while ( Serial.available() ) Serial.read(); 
+  is_conn = false;
 
   /* Verify config file */
   testLoadConfig();
@@ -35,8 +38,10 @@ void setup() {
   /* Verify wi-fi connectivity */  
   testWifiSetup();
 
-  /* Verify web host setup */
-  testWebHostSetup();
+  if (is_conn) {
+    /* Verify web host setup */
+    testWebHostSetup();
+  }
 }
 
 /* Loop */
@@ -47,15 +52,28 @@ void loop() {
 }
 
 void testWifiSetup() {
-    Serial.print("Configuring access point...");
+    unsigned long wifi_time = millis();
+    Serial.print("Configuring access point...");            
     WiFi.begin(ssid, password);
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-    Serial.println("");
-    Serial.println("WiFi connected \n\r\ IP address: ");
-    Serial.println(WiFi.localIP());    
+    bool is_timeout = false;
+
+    while ((WiFi.status() != WL_CONNECTED) && (!is_timeout)) {
+        if (millis() - wifi_time < DEFAULT_WIFI_TIMEOUT) {
+            delay(1000);
+            Serial.print(".");
+        } else {
+            is_timeout = true;
+        }
+    }   
+    
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("");
+        Serial.println("WiFi connected \n\r\ IP address: ");
+        Serial.println(WiFi.localIP());  
+        is_conn = true;
+    } else {
+        Serial.println("Wifi not connected.\n Web server not enabled.\n Using default settings.");
+    } 
 }
 
 void testWebHostSetup() {
