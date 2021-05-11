@@ -3,12 +3,23 @@
 #include <ESP8266WebServer.h>
 #include <FS.h>
 #include <ArduinoJson.h>
+#include <FastLED.h>
+#include <stdio.h>
 
 /* Config file */
 #define LEDHOST_CONFIG "/ledhost_config.json"
 #define DEFAULT_WIFI_TIMEOUT 90000
+#define LED_PIN 7
+#define NUM_LEDS 288
+#define FRAME_INTERVAL 64
+#define HSV_DEFAULT_VALUE 160
 
 StaticJsonDocument<1024> configFile;
+/*
+/* SetFrame Test for NodeHost_MCU */
+/*
+
+
 
 /* WiFi Credentials */
 const char* ssid;
@@ -18,6 +29,14 @@ bool is_conn;
 /* HTTP Setup */
 ESP8266WebServer server(8000);
 
+/* LED and heatmap values*/
+CRGB leds[NUM_LEDS];
+
+/* Timing */
+char logbuffer [80];
+bool cycle;
+int logsize;
+unsigned long currTime, prevTime, startTime, cycleTime;
 
 /* Setup  */
 void setup() {
@@ -30,7 +49,15 @@ void setup() {
   delay(500);
   Serial.flush();
   while ( Serial.available() ) Serial.read(); 
+  
+  Serial.println("Initializing parameters, activating LEDs");
   is_conn = false;
+  cycle = 0;
+  
+  /* Set LED strip */
+  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+
+  testLEDs();
 
   /* Verify config file */
   testLoadConfig();
@@ -46,7 +73,30 @@ void setup() {
 
 /* Loop */
 void loop() {    
-    server.handleClient();
+  currTime = millis();
+  server.handleClient();
+
+  if (currTime - prevTime > FRAME_INTERVAL) {
+     FastLED.show();       
+     prevTime = currTime;      
+  } 
+
+  if (cycle) {    
+    cycleTime = millis();
+    cycle = 0;
+  }  
+}
+
+void testLEDs() {
+  Serial.println("Testing leds...");
+  for (int i=0;i<NUM_LEDS;i++) {
+   leds[i]=CHSV(128,255,255);
+  }
+
+  FastLED.show();
+  delay(5000);
+  FastLED.clearData();
+  FastLED.show();
 }
 
 void testWifiSetup() {
@@ -77,8 +127,7 @@ void testWifiSetup() {
 void testWebHostSetup() {
     server.on("/", handleRoot);
     server.on("/testget", testGet);
-    server.on("/testpost", HTTP_POST, testPost);
-    server.on("/testbinarypost", HTTP_POST, testBinaryPost);
+    server.on("/testsetframe", HTTP_POST, testSetFrame);
     server.on("/led_on", handleLedOn);
     server.on("/led_off", handleLedOff);
     server.begin();
@@ -107,40 +156,22 @@ void testGet() {
     server.send(200, "text/plain","{ result: 'get' }");
 }
 
-void testPost() {   
-    Serial.println("Text post detected...");
-    
-    String response = "{ result: '";
-    response += server.arg("test");
-    response += "'}";
-    server.send(200, "text/plain", response);
-}
-
-void testBinaryPost() {
-    Serial.println("Binary post detected...");
-
-    Serial.println("Number of arguments...");
-    Serial.println(server.args());
-    Serial.println("Size of array...");
-    Serial.println(sizeof(server.arg(0)));
-
-    Serial.println("First byte read...");
-
-    for(int x=0; x<sizeof(server.arg(0)); x++) {
-      Serial.println(server.arg(0)[x], HEX);
-    }
-
-    Serial.println("Reading bytes...");
-    //byte binArray[server.args(0).length];
-    //server.args(0).getBytes(binArray, server.args(0).length);
-    
-    
+void testSetFrame() {
+//    Serial.println("SetFrame test...");
+//    Serial.print("Arguments: ");
+//    Serial.print(server.args());
+//    Serial.print(", Array size: ");
+//    Serial.println(sizeof(server.arg(0)));
   
-    //Print out the amount of arguments received in POST payload
-    Serial.println(server.args());
-  
-    server.send(200, "text/plain", "binary data sent");
-    Serial.println("Binary post completed...");
+    for(int x=0; x<NUM_LEDS; x++) {
+      leds[x]=CHSV(server.arg(0)[x], 255, 255);
+      
+      //Serial.print(server.arg(0)[x], HEX);
+      //Serial.print(",");
+    }    
+
+    cycle = 1;
+    server.send(200, "text/plain", "OK");
 }
 void testLoadConfig() {
   

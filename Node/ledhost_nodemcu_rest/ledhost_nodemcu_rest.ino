@@ -1,4 +1,4 @@
-d#include <ESP8266WiFi.h>
+#include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <FastLED.h>
@@ -396,7 +396,7 @@ void handleFrame() {
     
     // need to convert binary to LED array
     
-    setFrame()
+    //setFrame()
     server.send(200, "text/plain","{ result: 1 }");
 }
 
