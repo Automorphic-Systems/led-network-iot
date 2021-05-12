@@ -26,7 +26,7 @@ namespace LedLanClient
             while (Console.ReadKey().Key != ConsoleKey.Q)
             {
 
-                llHttpClient.SetFrame();
+                llHttpClient.SetFramePalette();
 
                 Console.WriteLine("Frame message is sent!");
             }

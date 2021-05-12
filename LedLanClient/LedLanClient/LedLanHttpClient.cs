@@ -17,6 +17,7 @@ namespace LedLanClient
         private static readonly short FRAME_INTERVAL = 64;
         private static readonly short NUM_LEDS = 288;
         private static readonly short MAX_ITER = 1000;
+        private static byte[] palette;
 
         public LedLanHttpClient()
         {
@@ -24,6 +25,7 @@ namespace LedLanClient
             {
                 BaseAddress = new System.Uri(LedLanHttpClient.URI)
             };
+
         }
 
         public async void SetFrame()
@@ -38,13 +40,6 @@ namespace LedLanClient
                 {
                     rand.NextBytes(leddata);
 
-                    //for(int j = 0; j<NUM_LEDS; j++)
-                    //{
-                    //    Console.Write(leddata[j].ToString("X2") + ",");
-                    //}
-
-                    //Console.WriteLine();
-
                     var binaryContent = new ByteArrayContent(leddata, 0, NUM_LEDS);
 
                     var binRequest = new HttpRequestMessage(HttpMethod.Post, $"{URI}/testsetframe")
@@ -55,6 +50,56 @@ namespace LedLanClient
                     var result = httpClient.SendAsync(binRequest);
 
                     Thread.Sleep(FRAME_INTERVAL);                    
+                }
+
+            }
+            catch (HttpRequestException hEx)
+            {
+                Console.WriteLine(hEx.Message);
+                throw;
+            }
+        }
+
+        public async void SetFramePalette()
+        {
+            try
+            {
+                var rand = new Random();
+
+                for (int i = 0; i < MAX_ITER; i++)
+                {
+                    int currentPos = 0;
+                    byte[] leddata = new byte[NUM_LEDS];
+                    palette = new byte[4];
+                    rand.NextBytes(palette);
+
+                    while (currentPos < NUM_LEDS)
+                    {
+                        for (int k = 0; k < palette.Length; k++)
+                        {
+                            int block = new Random().Next(4, 16);
+
+                            int blockScope = block > (NUM_LEDS - currentPos) ? (NUM_LEDS - currentPos) : block;
+
+                            for (int j = 0; j < blockScope; j++)
+                            {
+                                leddata[currentPos + j] = palette[k];
+                            }
+
+                            currentPos += blockScope;
+                        }
+                    }
+
+                    var binaryContent = new ByteArrayContent(leddata, 0, NUM_LEDS);
+
+                    var binRequest = new HttpRequestMessage(HttpMethod.Post, $"{URI}/testsetframe")
+                    {
+                        Content = binaryContent
+                    };
+
+                    var result = httpClient.SendAsync(binRequest);
+
+                    Thread.Sleep(FRAME_INTERVAL);
                 }
 
             }
