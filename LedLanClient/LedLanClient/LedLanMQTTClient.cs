@@ -14,22 +14,12 @@ namespace LedLanClient
 
         public static IManagedMqttClient client;
 
-        private static string MQTT_URI;
+        private static string MQTT_URI = "192.168.1.10";
         private static string MQTT_USER;
         private static string MQTT_PASSWORD;
-        private static int MQTT_PORT;
-        private static bool MQTT_SECURE;
+        private static int MQTT_PORT = 1883;
+        private static bool MQTT_SECURE = false;
 
-
-        public LedLanMQTTClient()
-        {
-            // Todo: load from config
-            MQTT_URI = "http://192.168.1.10";
-            MQTT_USER = "splat";
-            MQTT_PASSWORD = "splat";
-            MQTT_PORT = 1883;
-            MQTT_SECURE = false;
-        }
 
         public static async Task ConnectAsyc()
         {
@@ -37,7 +27,6 @@ namespace LedLanClient
 
             var messageBuilder = new MqttClientOptionsBuilder()
                                 .WithClientId(clientId)
-                                .WithCredentials(MQTT_USER, MQTT_PASSWORD)
                                 .WithTcpServer(MQTT_URI, MQTT_PORT)
                                 .WithCleanSession();
 
@@ -57,12 +46,14 @@ namespace LedLanClient
 
             client.UseConnectedHandler(e =>
             {
-                Console.WriteLine("Connected successfully with MQTT Brokers.");
+                Console.WriteLine("Connected successfully with MQTT Broker.");
             });
 
             client.UseDisconnectedHandler(e =>
             {
                 Console.WriteLine("Disconnected from MQTT Brokers.");
+                Console.WriteLine(e.Exception?.Message);
+                Console.WriteLine(e.Reason);
             });
 
             client.UseApplicationMessageReceivedHandler(e =>
@@ -103,6 +94,12 @@ namespace LedLanClient
                 .WithPayload(payload)
                 .WithQualityOfServiceLevel((MQTTnet.Protocol.MqttQualityOfServiceLevel) qos)
                 .WithRetainFlag(retainFlag)
+                .Build());
+
+        public static async Task SubscribeAsync(string topic, int qos = 1) =>
+            await client.SubscribeAsync(new MqttTopicFilterBuilder()
+                .WithTopic(topic)
+                .WithQualityOfServiceLevel((MQTTnet.Protocol.MqttQualityOfServiceLevel)qos)
                 .Build());
     }
 }

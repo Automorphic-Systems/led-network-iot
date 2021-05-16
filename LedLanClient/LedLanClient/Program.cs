@@ -21,14 +21,16 @@ namespace LedLanClient
         static void Main(string[] args)
         {
 
-            var llHttpClient = new LedLanHttpClient();
+            var llMqttController = new LedLanMQTTController();
+            llMqttController.Connect();
+            llMqttController.Subscribe("led/nodemcu");
 
-            while (Console.ReadKey().Key != ConsoleKey.Q)
-            {
+            var keyRead = Console.ReadKey().Key;
 
-                llHttpClient.SetFramePalette();
-
-                Console.WriteLine("Frame message is sent!");
+            while (keyRead != ConsoleKey.Q)
+            {                
+                llMqttController.Publish("led/nodemcu", $"{keyRead.ToString()}: This is a test message");
+                keyRead = Console.ReadKey().Key;
             }
         }
     }
