@@ -1,0 +1,14 @@
+D:\Development\led-network-iot\LedLanClient\LedLanClient\bin\Debug\netcoreapp3.1\LedLanClient.exe
+D:\Development\led-network-iot\LedLanClient\LedLanClient\obj\Debug\netcoreapp3.1\LedLanClient.csprojAssemblyReference.cache
+D:\Development\led-network-iot\LedLanClient\LedLanClient\obj\Debug\netcoreapp3.1\LedLanClient.AssemblyInfoInputs.cache
+D:\Development\led-network-iot\LedLanClient\LedLanClient\obj\Debug\netcoreapp3.1\LedLanClient.AssemblyInfo.cs
+D:\Development\led-network-iot\LedLanClient\LedLanClient\bin\Debug\netcoreapp3.1\LedLanClient.deps.json
+D:\Development\led-network-iot\LedLanClient\LedLanClient\bin\Debug\netcoreapp3.1\LedLanClient.runtimeconfig.json
+D:\Development\led-network-iot\LedLanClient\LedLanClient\bin\Debug\netcoreapp3.1\LedLanClient.runtimeconfig.dev.json
+D:\Development\led-network-iot\LedLanClient\LedLanClient\bin\Debug\netcoreapp3.1\LedLanClient.dll
+D:\Development\led-network-iot\LedLanClient\LedLanClient\bin\Debug\netcoreapp3.1\LedLanClient.pdb
+D:\Development\led-network-iot\LedLanClient\LedLanClient\obj\Debug\netcoreapp3.1\LedLanClient.dll
+D:\Development\led-network-iot\LedLanClient\LedLanClient\obj\Debug\netcoreapp3.1\LedLanClient.pdb
+D:\Development\led-network-iot\LedLanClient\LedLanClient\bin\Debug\netcoreapp3.1\MQTTnet.dll
+D:\Development\led-network-iot\LedLanClient\LedLanClient\obj\Debug\netcoreapp3.1\LedLanClient.csproj.CopyComplete
+D:\Development\led-network-iot\LedLanClient\LedLanClient\bin\Debug\netcoreapp3.1\MQTTnet.Extensions.ManagedClient.dll

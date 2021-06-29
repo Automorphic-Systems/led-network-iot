@@ -6,7 +6,6 @@ namespace LedLanClient
 {
     class LedLanMQTTController
     {
-        private LedLanMQTTClient client;
 
         public LedLanMQTTController()
         {
