@@ -1,3 +1,7 @@
 # Gitignore File
 
 ledhost_config.json
+*.dll
+*.obj
+/bin
+/obj

@@ -7,10 +7,10 @@
 
 #define LED_PIN 7
 #define UCHAR_MAX 255
-#define NUM_LEDS 114
+#define NUM_LEDS 288
 #define DEFAULT_PORT 8000
 #define DEFAULT_INTERVAL 32
-#define DEFAULT_BRIGHTNESS 224
+#define DEFAULT_BRIGHTNESS 192
 #define DEFAULT_WIFI_TIMEOUT 20000
 #define LEDHOST_CONFIG "/ledhost_config.json"
 
@@ -391,12 +391,16 @@ void handleMode() {
 }
 
 void handleFrame() {
-  
+    FastLED.clear();
+    currentDisplay = "frame";
+    
+    // need to convert binary to LED array
+    
+    //setFrame()
     server.send(200, "text/plain","{ result: 1 }");
 }
 
-void handleConfig() {
-  
+void handleConfig() {  
     server.send(200, "text/plain","{ result: 1 }");
 }
 
