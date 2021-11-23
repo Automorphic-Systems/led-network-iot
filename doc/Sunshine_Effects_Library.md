@@ -24,7 +24,8 @@ These are effects that are supported by the setmode operation, and whose pixel v
  Parameters
 
 	"mode", "streak"
-	"hue",[int] - sets HSV color value of the streak - no value defaults to a changing rainbow effect - value can be between 1 and 255
+	"hue",[int] - sets HSV color value of the streak - no value defaults to a changing rainbow effect 
+	- value can be between 1 and 255
 
 ### Effect : Chase
 
@@ -35,7 +36,8 @@ These are effects that are supported by the setmode operation, and whose pixel v
 	"mode", "chase"
 	"color_count",[int] - sets the number of colors to use from the palette, value can be between 1 and 16 
 	"rate", [int] - rate at which the chasing pattern moves, value can be between 0 and 255
-	"max_iter", [int] - number of iterations/frames to render before resetting the palette - can be between 1 and 100000 (arbitrarily large)
+	"max_iter", [int] - number of iterations/frames to render before resetting the palette - can be 
+	between 1 and 100000 (arbitrarily large)
 
 ### Effect : Flicker
 
@@ -45,7 +47,8 @@ These are effects that are supported by the setmode operation, and whose pixel v
 
 	"mode", "flicker"
 	"color_count",[int] - sets the number of colors to use from the palette, value can be between 1 and 16 ✔
-	"max_iter", [int] - number of iterations/frames to render before resetting the palette - can be between 1 and 100000 (arbitrarily large) ✔
+	"max_iter", [int] - number of iterations/frames to render before resetting the palette - can be between 
+	1 and 100000 (arbitrarily large) ✔
 	"twink_min", [int] - minimum number of LEDs to fade 
 	"twink_max", [int] - maximum number of LEDs to fade
 	"boost_thr", [int] - number of LEDs to boost intermittently ✔
